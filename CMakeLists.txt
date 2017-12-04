@@ -3,17 +3,23 @@
 # found in the LICENSE file. See the AUTHORS file for names of contributors.
 
 cmake_minimum_required(VERSION 3.1)
-project(leveldb VERSION 0.1.0 LANGUAGES C CXX)
 
-# This project can take advantage of C++11.
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED OFF)
-# TODO(pwnall): See if setting this to ON gives us the *_unlocked functions.
-set(CMAKE_CXX_EXTENSIONS OFF)
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/cmake/toolchain.cmake")
+
+include(HunterGate)
+HunterGate(
+    URL "https://github.com/ruslo/hunter/archive/v0.19.178.tar.gz"
+    SHA1 "1b94f895831f76e5a63e0537dd366ae142543c02"
+)
+
+project(leveldb VERSION 0.1.0 LANGUAGES C CXX)
 
 option(LEVELDB_BUILD_TESTS "Build LevelDB's unit tests" ON)
 option(LEVELDB_BUILD_BENCHMARKS "Build LevelDB's benchmarks" ON)
 option(LEVELDB_INSTALL "Install LevelDB's header and library" ON)
+option(LEVELDB_WITH_SNAPPY "Build with snappy compression" ON)
+option(LEVELDB_WITH_CRC32C "Build with crc32c library" ON)
 
 include(TestBigEndian)
 test_big_endian(LEVELDB_IS_BIG_ENDIAN)
@@ -24,9 +30,15 @@ check_include_file("unistd.h" HAVE_UNISTD_H)
 include(CheckIncludeFileCXX)
 check_include_file_cxx("atomic" LEVELDB_ATOMIC_PRESENT)
 
-include(CheckLibraryExists)
-check_library_exists(crc32c crc32c_value "" HAVE_CRC32C)
-check_library_exists(snappy snappy_compress "" HAVE_SNAPPY)
+if(LEVELDB_WITH_CRC32C)
+  hunter_add_package(crc32c)
+  find_package(crc32c CONFIG REQUIRED)
+endif()
+
+if(LEVELDB_WITH_SNAPPY)
+  hunter_add_package(Snappy)
+  find_package(Snappy CONFIG REQUIRED)
+endif()
 
 include(CheckSymbolExists)
 check_symbol_exists(fdatasync "unistd.h" HAVE_FDATASYNC)
@@ -45,9 +57,9 @@ include_directories(
 
 add_library(leveldb_port_posix OBJECT port/port_posix.cc port/port_posix_sse.cc
     ${PROJECT_BINARY_DIR}/include/port/port_config.h
-    ${PROJECT_SOURCE_DIR}/port/atomic_pointer.h
-    ${PROJECT_SOURCE_DIR}/port/port_posix.h
-    ${PROJECT_SOURCE_DIR}/port/port.h
+    port/atomic_pointer.h
+    port/port_posix.h
+    port/port.h
 )
 
 add_library(leveldb ""
@@ -151,14 +163,15 @@ find_package(Threads REQUIRED)
 target_link_libraries(leveldb Threads::Threads)
 set(deps Threads)
 
-if (HAVE_CRC32C)
-  target_link_libraries(leveldb crc32c)
+if(LEVELDB_WITH_CRC32C)
+  target_link_libraries(leveldb crc32c::crc32c)
   list(APPEND deps crc32c)
-endif (HAVE_CRC32C)
-if (HAVE_SNAPPY)
-  target_link_libraries(leveldb snappy)
-  list(APPEND deps snappy)
-endif (HAVE_SNAPPY)
+endif()
+
+if(LEVELDB_WITH_SNAPPY)
+  target_link_libraries(leveldb Snappy::snappy)
+  list(APPEND deps Snappy)
+endif()
 
 add_library(leveldb_memenv
     "${PROJECT_SOURCE_DIR}/helpers/memenv/memenv.cc"
