@@ -4,8 +4,9 @@
 
 cmake_minimum_required(VERSION 3.1)
 
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
-set(CMAKE_TOOLCHAIN_FILE "${CMAKE_SOURCE_DIR}/cmake/toolchain.cmake")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
+set(CMAKE_TOOLCHAIN_FILE "${CMAKE_CURRENT_SOURCE_DIR}/cmake/toolchain.cmake" CACHE FILEPATH
+    "Toolchain to use for building this package and dependencies")
 
 include(HunterGate)
 HunterGate(
@@ -160,16 +161,16 @@ target_compile_definitions(leveldb
 # TODO(pwnall): This is only needed for port_posix.
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
-target_link_libraries(leveldb Threads::Threads)
+target_link_libraries(leveldb PUBLIC Threads::Threads)
 set(deps Threads)
 
 if(LEVELDB_WITH_CRC32C)
-  target_link_libraries(leveldb crc32c::crc32c)
+  target_link_libraries(leveldb PUBLIC crc32c::crc32c)
   list(APPEND deps crc32c)
 endif()
 
 if(LEVELDB_WITH_SNAPPY)
-  target_link_libraries(leveldb Snappy::snappy)
+  target_link_libraries(leveldb PUBLIC Snappy::snappy)
   list(APPEND deps Snappy)
 endif()
 
