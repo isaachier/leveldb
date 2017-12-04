@@ -294,7 +294,7 @@ if(LEVELDB_INSTALL)
   #   * <prefix>/lib/
   #   * <prefix>/include/
   set(config_install_dir "lib/cmake/${PROJECT_NAME}")
-  set(include_install_dir "include")
+  set(include_install_dir "include/leveldb")
 
   set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
 
