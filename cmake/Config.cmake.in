@@ -1,7 +1,11 @@
 @PACKAGE_INIT@
 
 foreach(dep @deps@)
-  find_package(dep REQUIRED)
+  if(dep STREQUAL "Threads")
+    find_package(${dep} REQUIRED)
+  else()
+    find_package(${dep} CONFIG REQUIRED)
+  endif()
 endforeach()
 
 check_required_components("@PROJECT_NAME@")
